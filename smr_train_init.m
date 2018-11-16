@@ -1,5 +1,5 @@
 %smr_train_root = getenv('SMR_TRAIN_ROOT');
-smr_train_root = '/home/rleeb/Git/smr_train';
+smr_train_root = '/home/cnbi/dev/cnbi-smrtrain';
 addpath('/usr/share/cnbiloop/cnbitkmat/mtpath/');
 
 addpath([smr_train_root '/classification/']);

@@ -93,8 +93,8 @@ end
 Classifier{1}.modality = 'rhlh';
 Classifier{2}.modality = 'rhbf';
 Classifier{3}.modality = 'lhbf';
-Classifier{4}.modality = 'rhrst';
-Classifier{5}.modality = 'lhrst';
+Classifier{4}.modality = 'flrst';
+Classifier{5}.modality = 'extrst';
 Classifier{6}.modality = 'mod1';
 Classifier{7}.modality = 'mod2';
 
@@ -113,13 +113,13 @@ Classifier{3}.task_left = 769;
 Classifier{3}.task_top = -1;
 Classifier{3}.task_bottom = -1;
 
-Classifier{4}.task_right = 770;
+Classifier{4}.task_right = 782;
 Classifier{4}.task_left = 783;
 Classifier{4}.task_top = -1;
 Classifier{4}.task_bottom = -1;
 
-Classifier{5}.task_right = 783;
-Classifier{5}.task_left = 769;
+Classifier{5}.task_right = 784;
+Classifier{5}.task_left = 783;
 Classifier{5}.task_top = -1;
 Classifier{5}.task_bottom = -1;
 
