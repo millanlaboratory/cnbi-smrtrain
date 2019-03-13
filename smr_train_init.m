@@ -1,5 +1,7 @@
 %smr_train_root = getenv('SMR_TRAIN_ROOT');
-smr_train_root = '/home/cnbi/dev/cnbi-smrtrain';
+homeDir = getuserdir();
+smr_train_root = [homeDir '/dev/cnbi-smrtrain'];
+
 addpath('/usr/share/cnbiloop/cnbitkmat/mtpath/');
 
 addpath([smr_train_root '/classification/']);
