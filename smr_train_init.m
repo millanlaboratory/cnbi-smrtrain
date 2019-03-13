@@ -16,6 +16,7 @@ addpath([smr_train_root '/tools/']);
 addpath([smr_train_root '/visualization/']);
 addpath([smr_train_root '/toolboxes/mtmatlab']);
 addpath([smr_train_root '/toolboxes/matndf']);
+addpath(genpath([smr_train_root '/toolboxes/eeglab']));
 
 addpath([smr_train_root '/modules/smr/']);
 addpath([smr_train_root '/modules/wp4/']);
