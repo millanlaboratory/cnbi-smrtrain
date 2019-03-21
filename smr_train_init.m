@@ -1,6 +1,7 @@
 %smr_train_root = getenv('SMR_TRAIN_ROOT');
 homeDir = getuserdir();
 smr_train_root = [homeDir '/dev/cnbi-smrtrain'];
+
 addpath('/usr/share/cnbiloop/cnbitkmat/mtpath/');
 
 addpath([smr_train_root '/classification/']);
@@ -17,6 +18,7 @@ addpath([smr_train_root '/tools/']);
 addpath([smr_train_root '/visualization/']);
 addpath([smr_train_root '/toolboxes/mtmatlab']);
 addpath([smr_train_root '/toolboxes/matndf']);
+addpath(genpath([smr_train_root '/toolboxes/eeglab']));
 
 addpath([smr_train_root '/modules/smr/']);
 addpath([smr_train_root '/modules/wp4/']);
