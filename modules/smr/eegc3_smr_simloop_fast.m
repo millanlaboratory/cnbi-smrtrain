@@ -90,31 +90,19 @@ end
 % Import all the data we need
 printf('[eegc3_smr_simloop] Loading GDF/TXT files... ');
 [data.eeg, data.hdr] = sload(filexdf);
+
+% %% For mentalwork, we save all 19 channels of the WS cap, but we only want to use
+% % 8 of them for MI (real index in parenthesis): 
+% % [1.F3 (4) 2.F4 (5) 3.Cz (8) 4.C3 (9) 5.C4 (10) 6.Pz (15) 7.P3 (16) 8.P4 (17)]
+% orig_eeg = data.eeg; % Keep a copy of the original data
+% data.eeg = data.eeg(:,[4 5 8 9 10 15 16 17]);
+
 if(~isempty(bci.trace.eegc3_smr_simloop.filetxt))
 	data.aprobs = importdata(filetxt);
 	data.cprobs = data.aprobs(:, 1:2);
 	data.iprobs = data.aprobs(:, 3:4);
 end
 printf('Done!\n');
-
-% Extract trigger informations
-data.lpt = data.eeg(:, end);
-data.lpt(find(data.lpt > 1)) = 1;		% To be changed = 0
-data.evt = gettrigger(data.lpt);
-data.red = zeros(1, size(data.eeg,1));
-
-if (length(data.evt) ~= length(data.hdr.EVENT.POS))
-    disp('It seems that HW triggers are missing. Using SW trigger positions and durations instead');
-    data.red(data.hdr.EVENT.POS) = 1;
-    data.pos = data.hdr.EVENT.POS;
-else
-    disp('Using HW trigger positions for precise timing');
-    data.red(data.evt) = 1;
-    data.pos = data.evt;
-end
-
-data.lbl = data.hdr.EVENT.TYP;
-data.dur = data.hdr.EVENT.DUR;
 
 % Set up simulated BCI
 if(isstruct(filemat))
@@ -135,8 +123,31 @@ else
         bci = [];
         return;
     end
-
 end
+
+% Extract trigger informations
+if(bci.settings.acq.channels_tri ~= 0)
+    data.lpt = data.eeg(:, end);
+    data.eeg  = data.eeg(:,1:bci.settings.acq.channels_eeg);
+else
+    data.lpt = zeros(size(data.eeg,1),1);
+end
+data.lpt(find(data.lpt > 1)) = 1;		% To be changed = 0
+data.evt = gettrigger(data.lpt);
+data.red = zeros(1, size(data.eeg,1));
+
+if (length(data.evt) ~= length(data.hdr.EVENT.POS))
+    disp('It seems that HW triggers are missing. Using SW trigger positions and durations instead');
+    data.red(data.hdr.EVENT.POS) = 1;
+    data.pos = data.hdr.EVENT.POS;
+else
+    disp('Using HW trigger positions for precise timing');
+    data.red(data.evt) = 1;
+    data.pos = data.evt;
+end
+
+data.lbl = data.hdr.EVENT.TYP;
+data.dur = data.hdr.EVENT.DUR;
 
 % Find the protocol
 [taskset, resetevents, protocol_label] = eegc3_smr_guesstask(data.lbl', bci.settings);
@@ -157,8 +168,8 @@ printf('[eegc3_smr_simloop] Calculating and plotting EEG spectrum');
 %eegc3_smr_plotSpectrum(bci, bci.trace.eegc3_smr_simloop.filexdf, ...
 %    bci.settings.modules.smr.montage, info);
 
-bci.eeg = ndf_ringbuffer(bci.settings.acq.sf, ...
-	bci.settings.acq.channels_eeg, 1);
+%bci.eeg = ndf_ringbuffer(bci.settings.acq.sf, ...
+%	bci.settings.acq.channels_eeg, 1);s
 bci.tri = ndf_ringbuffer(bci.settings.acq.sf, 1, 1);
 bci.support = eegc3_smr_newsupport(bci.settings, rejection, integration);
 bci.frames = bci.settings.modules.smr.win.shift* ...
@@ -267,11 +278,15 @@ if((mod(psdshift,winshift) ~=0) && (mod(winshift,psdshift) ~=0))
 end
 
 % Preprocess batch
-data.eeg = eegc3_smr_preprocess(data.eeg(:,1:end-1), ...
+data.eeg = eegc3_smr_preprocess(data.eeg, ...
 	bci.settings.modules.smr.options.prep.dc, ...
 	bci.settings.modules.smr.options.prep.car, ...  
 	bci.settings.modules.smr.options.prep.laplacian, ...
+    bci.settings.modules.smr.options.prep.filter, ...
 	bci.settings.modules.smr.laplacian);
+
+bci.eeg = data.eeg;
+bci.lbl_eeg = data.lbl_sample;
 
 
 % Create arguments for spectrogram
@@ -294,7 +309,14 @@ for ch=1:bci.settings.acq.channels_eeg
 end
 
 % Keep only desired frequencies
-p = p(find(ismember(f,bci.settings.modules.smr.psd.freqs)),:,:);
+%p = p(find(ismember(f,bci.settings.modules.smr.psd.freqs)),:,:);
+
+% Snap non-integer freqs to nearest desired freq amnd return indices
+set = [];
+for fr=1:length(bci.settings.modules.smr.psd.freqs)
+    [~, set(fr)] = min(abs( f - bci.settings.modules.smr.psd.freqs(fr)));
+end
+p = p(set,:,:);
 
 % Setup moving average filter parameters
 FiltA = 1;

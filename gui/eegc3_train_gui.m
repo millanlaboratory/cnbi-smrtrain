@@ -22,7 +22,7 @@ function varargout = eegc3_train_gui(varargin)
 
 % Edit the above text to modify the response to help eegc3_train_gui
 
-% Last Modified by GUIDE v2.5 15-Aug-2016 13:54:36
+% Last Modified by GUIDE v2.5 08-Jun-2018 23:36:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,9 +63,23 @@ handles.settings = settings;
 handles.settings.modules.smr.options.selection.usegui = 1;
 handles.settings.modules.smr.options.extraction.trials = 0;
 handles.usedlg = false;
-
-set(handles.Prep_DC,'Value',1);
-set(handles.Prep_Laplacian,'Value',1);
+set(handles.Subject_code,'String','unknown');
+set(handles.Feat_Win,'String',num2str(settings.modules.smr.win.size));
+set(handles.Feat_Win_Shift,'String',num2str(settings.modules.smr.win.shift));
+set(handles.PSD_Win,'String',num2str(settings.modules.smr.psd.win));
+set(handles.PSD_Overlap,'String',num2str(settings.modules.smr.psd.ovl));
+set(handles.PSD_Freqs,'String',[num2str(settings.modules.smr.psd.freqs(1)) ':' ...
+    num2str(settings.modules.smr.psd.freqs(2)-settings.modules.smr.psd.freqs(1)) ':'...
+    num2str(settings.modules.smr.psd.freqs(end))]);
+set(handles.Prep_DC,'Value',settings.modules.smr.options.prep.dc);
+set(handles.Prep_CAR,'Value',settings.modules.smr.options.prep.car);
+set(handles.Prep_Laplacian,'Value',settings.modules.smr.options.prep.laplacian);
+set(handles.EEG_Fs,'String',num2str(settings.acq.sf));
+set(handles.EEG_Channels,'String',num2str(settings.acq.channels_eeg));
+set(handles.Montage_File,'String','none');
+set(handles.Lbl_Montage,'Enable','on');
+set(handles.Montage_File,'Enable','on');
+set(handles.Ld_Montage,'Enable','on');
 set(handles.UseDlg,'Value',0);
 set(handles.SelectGUI,'Value',1);
 set(handles.EnableSettings,'Value',0);
@@ -83,8 +97,8 @@ handles = load_listbox(dir,handles);
 
 
 % Prepare the Classifier cell array for requested classifiers
-Classifier = cell(1,7);
-for i=1:7
+Classifier = cell(1,9);
+for i=1:9
     Classifier{i}.Enable = false;
     Classifier{i}.filename = '';
     Classifier{i}.filepath = '';
@@ -93,10 +107,12 @@ end
 Classifier{1}.modality = 'rhlh';
 Classifier{2}.modality = 'rhbf';
 Classifier{3}.modality = 'lhbf';
-Classifier{4}.modality = 'flrst';
-Classifier{5}.modality = 'extrst';
+Classifier{4}.modality = 'rhrst';
+Classifier{5}.modality = 'lhrst';
 Classifier{6}.modality = 'mod1';
 Classifier{7}.modality = 'mod2';
+Classifier{8}.modality = 'bhbf';
+Classifier{9}.modality = 'bfbh';
 
 Classifier{1}.task_right = 770;
 Classifier{1}.task_left = 769;
@@ -113,13 +129,13 @@ Classifier{3}.task_left = 769;
 Classifier{3}.task_top = -1;
 Classifier{3}.task_bottom = -1;
 
-Classifier{4}.task_right = 782;
+Classifier{4}.task_right = 770;
 Classifier{4}.task_left = 783;
 Classifier{4}.task_top = -1;
 Classifier{4}.task_bottom = -1;
 
-Classifier{5}.task_right = 784;
-Classifier{5}.task_left = 783;
+Classifier{5}.task_right = 783;
+Classifier{5}.task_left = 769;
 Classifier{5}.task_top = -1;
 Classifier{5}.task_bottom = -1;
 
@@ -132,6 +148,16 @@ Classifier{7}.task_right = -1;
 Classifier{7}.task_left = -1;
 Classifier{7}.task_top = -1;
 Classifier{7}.task_bottom = -1;
+
+Classifier{8}.task_right = 773;
+Classifier{8}.task_left = 771;
+Classifier{8}.task_top = -1;
+Classifier{8}.task_bottom = -1;
+
+Classifier{9}.task_right = 771;
+Classifier{9}.task_left = 773;
+Classifier{9}.task_top = -1;
+Classifier{9}.task_bottom = -1;
 
 handles.Classifier = Classifier;
 
@@ -194,11 +220,12 @@ else
         handles.settings.info.subject = sID{1};
         set(handles.Subject_code,'String',sID);
         
-        [SR ChanNum TrChanNum] = eegc3_GDFInfo(file_path);
-        handles.settings.acq.sf = SR;
-        handles.settings.acq.channels_eeg = ChanNum;
-        set(handles.EEG_Fs,'String',SR);
-        set(handles.EEG_Channels,'String',num2str(ChanNum));
+%         [SR ChanNum TrChanNum] = eegc3_GDFInfo(file_path);
+%         handles.settings.acq.sf = SR;
+%         %handles.settings.acq.channels_eeg = ChanNum;
+%         handles.settings.acq.channels_tri = TrChanNum;
+%         set(handles.EEG_Fs,'String',SR);
+%         %set(handles.EEG_Channels,'String',num2str(ChanNum));
         
         guidata(gcf,handles);
     end
@@ -1028,8 +1055,8 @@ if(~isempty(get(hObject,'String')) && ~isnan(str2double(get(hObject,'String'))) 
         handles.settings.modules.smr.win.shift  = str2double(get(hObject,'String'));
 else
     uiwait(msgbox('Window Shift should be a positive number (in seconds)!','Attention!','error'));
-    set(hObject,'String','0.0625');
-    handles.settings.modules.smr.win.shift  = 1/16;
+    set(hObject,'String','0.1');
+    handles.settings.modules.smr.win.shift  = 0.1;
 end
 guidata(gcf,handles);
 
@@ -1095,8 +1122,8 @@ if(~isempty(get(hObject,'String')) && ~isnan(str2double(get(hObject,'String'))) 
         handles.settings.modules.smr.psd.ovl  = str2double(get(hObject,'String'));
 else
     uiwait(msgbox('PSD Window Overlapping should be a positive number!','Attention!','error'));
-    set(hObject,'String','0.5');
-    handles.settings.modules.smr.psd.ovl  = 0.5;
+    set(hObject,'String','0.6');
+    handles.settings.modules.smr.psd.ovl  = 0.6;
 end
 guidata(gcf,handles);
 
@@ -1279,8 +1306,8 @@ if(~isempty(get(hObject,'String')) && ~isnan(str2double(get(hObject,'String'))) 
         handles.settings.acq.sf  = str2double(get(hObject,'String'));
 else
     uiwait(msgbox('Sampling frequency should be a positive integer (in Hz)!','Attention!','error'));
-    set(hObject,'String','512');
-    handles.settings.acq.sf  = 512;
+    set(hObject,'String','300');
+    handles.settings.acq.sf  = 300;
 end
 guidata(gcf,handles);
 
@@ -1339,17 +1366,19 @@ settings = eegc3_newsettings();
 settings = eegc3_smr_newsettings(settings);
 handles.settings = settings;
 set(handles.Subject_code,'String','unknown');
-set(handles.Feat_Win,'String','1');
-set(handles.Feat_Win_Shift,'String','0.0625');
-set(handles.PSD_Win,'String','0.5');
-set(handles.PSD_Overlap,'String','0.5');
-set(handles.PSD_Freqs,'String','4:2:48');
-set(handles.Prep_DC,'Value',1);
-set(handles.Prep_CAR,'Value',0);
-set(handles.Prep_Laplacian,'Value',1);
-set(handles.EEG_Fs,'String','512');
-set(handles.EEG_Channels,'String','16');
-set(handles.Montage_File,'String','gTec16.mat');
+set(handles.Feat_Win,'String',num2str(settings.modules.smr.win.size));
+set(handles.Feat_Win_Shift,'String',num2str(settings.modules.smr.win.shift));
+set(handles.PSD_Win,'String',num2str(settings.modules.smr.psd.win));
+set(handles.PSD_Overlap,'String',num2str(settings.modules.smr.psd.ovl));
+set(handles.PSD_Freqs,'String',[num2str(settings.modules.smr.psd.freqs(1)) ':' ...
+    num2str(settings.modules.smr.psd.freqs(2)-settings.modules.smr.psd.freqs(1)) ':'...
+    num2str(settings.modules.smr.psd.freqs(end))]);
+set(handles.Prep_DC,'Value',settings.modules.smr.options.prep.dc);
+set(handles.Prep_CAR,'Value',settings.modules.smr.options.prep.car);
+set(handles.Prep_Laplacian,'Value',settings.modules.smr.options.prep.laplacian);
+set(handles.EEG_Fs,'String',num2str(settings.acq.sf));
+set(handles.EEG_Channels,'String',num2str(settings.acq.channels_eeg));
+set(handles.Montage_File,'String','eego64.mat');
 set(handles.Lbl_Montage,'Enable','on');
 set(handles.Montage_File,'Enable','on');
 set(handles.Ld_Montage,'Enable','on');
@@ -1429,7 +1458,7 @@ end
 
 % Warn that only features will be computed
 isEnabled = false;
-for i=1:7
+for i=1:9
     if(handles.Classifier{i}.Enable)
         isEnabled = true;
     end
@@ -1628,3 +1657,66 @@ function Mod2Btrig_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in BHBFCheck.
+function BHBFCheck_Callback(hObject, eventdata, handles)
+% hObject    handle to BHBFCheck (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of BHBFCheck
+if(get(handles.BHBFCheck,'Value')==1)
+    set(handles.LdClassBHBF,'Enable','on');
+    set(handles.BHBFCheck,'Value',1);
+    handles.Classifier{8}.Enable = true;
+else
+    set(handles.LdClassBHBF,'Enable','off');
+    set(handles.BHBFCheck,'Value',0);
+    handles.Classifier{8}.Enable = false;
+end
+guidata(gcf,handles);
+
+% --- Executes on button press in LdClassBHBF.
+function LdClassBHBF_Callback(hObject, eventdata, handles)
+% hObject    handle to LdClassBHBF (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[handles.Classifier{8}.filepath handles.Classifier{8}.filename] = eegc3_gui_initclass();
+if(~isempty(handles.Classifier{8}.filepath))
+    set(handles.ClassLbl_bhbf,'String',handles.Classifier{8}.filename);
+else
+    set(handles.ClassLbl_bhbf,'String','None');
+end
+guidata(gcf,handles);
+
+% --- Executes on button press in BFBHCheck.
+function BFBHCheck_Callback(hObject, eventdata, handles)
+% hObject    handle to BFBHCheck (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of BFBHCheck
+if(get(handles.BFBHCheck,'Value')==1)
+    set(handles.LdClassBFBH,'Enable','on');
+    set(handles.BFBHCheck,'Value',1);
+    handles.Classifier{9}.Enable = true;
+else
+    set(handles.LdClassBFBH,'Enable','off');
+    set(handles.BFBHCheck,'Value',0);
+    handles.Classifier{9}.Enable = false;
+end
+guidata(gcf,handles);
+
+% --- Executes on button press in LdClassBFBH.
+function LdClassBFBH_Callback(hObject, eventdata, handles)
+% hObject    handle to LdClassBFBH (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[handles.Classifier{9}.filepath handles.Classifier{9}.filename] = eegc3_gui_initclass();
+if(~isempty(handles.Classifier{9}.filepath))
+    set(handles.ClassLbl_bfbh,'String',handles.Classifier{9}.filename);
+else
+    set(handles.ClassLbl_bfbh,'String','None');
+end
+guidata(gcf,handles);

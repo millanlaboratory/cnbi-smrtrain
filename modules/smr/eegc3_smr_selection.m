@@ -32,10 +32,10 @@ if(settings.modules.smr.options.selection.stability)
     settings.bci.smr.bands = selection.Allbands;
 
     % Plots 
-    eegc3_dpplot(101, selection.Alldpa, [0 15], ...
+    eegc3_dpplot(101, selection.Alldpa, [0 5], ...
         1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs);
     
-    eegc3_dpplot(102, selection.Alldpm, [0 15], ...
+    eegc3_dpplot(102, selection.Alldpm, [0 5], ...
         1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs);
     
     % Feature selection GUI evoked here
@@ -45,6 +45,46 @@ if(settings.modules.smr.options.selection.stability)
             selection.Alldpa,selection.Alldpm,settings);
     end
     
+elseif(settings.modules.smr.options.selection.overall)
+    disp('[eegc3_smr_selection] Running feature selection: overall');
+    % Concatenate all runs
+    adataset.data = [];
+    adataset.labels = [];
+    
+    RunNum = length(dataset.run);
+    for r=1:RunNum
+    
+        adataset.data = [adataset.data; dataset.run{r}.data];
+        adataset.labels = [adataset.labels; dataset.run{r}.labels];
+        
+    end
+    
+    % Selection on the overall runs
+    [selection.Alldpa, selection.Allchannels, selection.Allbands, ...
+	selection.Allbandsidx, selection.Alltot, selection.Alldpm,...
+	dummy1, dummy2] = ...
+		eegc3_smr_select(adataset, settings);
+    
+    % Selection stability
+    selection_stability = eegc3_smr_select_stable(dataset, settings);
+
+    % Put into settings structure the result of selection
+    settings.bci.smr.channels = selection.Allchannels;
+    settings.bci.smr.bands = selection.Allbands; 
+    
+    % Plots 
+    eegc3_dpplot(101, selection.Alldpa, [0 1], ...
+        1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs, 1);
+    
+    eegc3_dpplot(102, selection.Alldpm, [0 1], ...
+        1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs, 1);
+    
+	% Feature selection GUI evoked here
+    if(settings.modules.smr.options.selection.usegui)
+        [settings Pbnidx Ptot] = ...
+            eegc3_select_gui(selection_stability.Pdpa,...
+            selection.Alldpa,selection.Alldpm,settings);
+    end
 else
     
     disp('[eegc3_smr_selection] Running feature selection: batch');
@@ -70,10 +110,10 @@ else
     settings.bci.smr.bands = selection.Allbands; 
     
     % Plots 
-    eegc3_dpplot(101, selection.Alldpa, [0 15], ...
+    eegc3_dpplot(101, selection.Alldpa, [0 1], ...
         1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs, 1);
     
-    eegc3_dpplot(102, selection.Alldpm, [0 15], ...
+    eegc3_dpplot(102, selection.Alldpm, [0 1], ...
         1:settings.acq.channels_eeg, settings.modules.smr.psd.freqs, 1);
-    
+   
 end

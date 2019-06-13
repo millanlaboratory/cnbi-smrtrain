@@ -22,7 +22,7 @@ function varargout = eegc3_select_gui(varargin)
 
 % Edit the above text to modify the response to help eegc3_select_gui
 
-% Last Modified by GUIDE v2.5 08-Feb-2019 15:05:44
+% Last Modified by GUIDE v2.5 09-Feb-2011 20:36:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,146 +55,78 @@ function eegc3_select_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for eegc3_select_gui
 handles.output = hObject;
 	
-% Asses inputs
-if(nargin < 4)
-    disp('Invalid number of input arguments. Try again!');
-end
+	% Asses inputs
+	if(nargin < 4)
+		disp('Invalid number of input arguments. Try again!');
+	end
 
-handles.SessionPlotMats = varargin{1};
-handles.DPPlotMat = varargin{2};
-handles.SelectedMat = varargin{3};
-handles.settings = varargin{4};
+	handles.SessionPlotMats = varargin{1};
+	handles.DPPlotMat = varargin{2};
+	handles.SelectedMat = varargin{3};
+	handles.settings = varargin{4};
 
-set(handles.ModeGroup,'SelectionChangeFcn',@ModeChangeFcn);
-% Set mode to automatic
-handles.mode = 'auto';
-set(handles.AutoBtn,'Value',1);
-set(handles.ManBtn,'Value',0);
-load('channel_location_16_10-20_mi.mat');
-% SessionPlots is a cell array of matrices (DPa mats)
-DPLength = length(handles.SessionPlotMats);
-for i=1:DPLength
-    spax = subplot(1,DPLength,i,'Parent',handles.SessionPlot);
-    imagesc(handles.SessionPlotMats{i},'Parent',spax);
-    set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
-    set(gca, 'YTickLabel', {chanlocs16.labels});
-    set(gca, 'XTick',      [1:1:23]);
-    set(gca, 'XTickLabel', num2cell([4:2:48]));
-    xlabel('');
-    ylabel('');
-    plotPresent(handles);
-end
-waves = {'alpha', 'low beta', 'high beta'};
-wavesIndex = [3, 5; 6, 9; 10, 14];
-for i=1:DPLength
-    for j = 1:length(waves)
-        spax = subplot(DPLength,length(waves),(i-1)*length(waves)+j,'Parent',handles.topoplots);
-        h = plot_mytopoplot(mean(handles.SessionPlotMats{i}(:,wavesIndex(j,1):wavesIndex(j,2)),2), chanlocs16, 'conv', 'off', 'style', 'map', 'limits', [-1 1], 'electrodes', 'on');
-        %title([waves{j} ' run ' num2str(i)]);
+    set(handles.ModeGroup,'SelectionChangeFcn',@ModeChangeFcn);
+    % Set mode to automatic
+    handles.mode = 'auto';
+    set(handles.AutoBtn,'Value',1);
+    set(handles.ManBtn,'Value',0);
+    
+    % SessionPlots is a cell array of matrices (DPa mats)
+    DPLength = length(handles.SessionPlotMats);
+    for i=1:DPLength
+        spax(i) = subplot(1,DPLength,i,'Parent',handles.SessionPlot);
+        h = imagesc(handles.SessionPlotMats{i},'Parent',spax(i));
+        %set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
+        %set(gca, 'YTickLabel', {});
+        %set(gca, 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
+        %set(gca, 'XTickLabel', {});
+		set(spax(i), 'YTick',      1:handles.settings.acq.channels_eeg);
+    	set(spax(i), 'YTickLabel', handles.settings.acq.channel_lbl);
+    	set(spax(i), 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
+    	set(spax(i), 'XTickLabel', {handles.settings.modules.smr.psd.freqs});
+		ax = ancestor(h, 'axes');
+		yrule = ax.YAxis;
+		xrule = ax.XAxis;
+		yrule.FontSize = 10;
+		xrule.FontSize = 10;
+        xlabel(spax(i), '[Hz]');
+        ylabel(spax(i), '');
+        %plotPresent(handles);
     end
-end
-% Generate the overall DPPlot form the AllDPa matrix
-axes(handles.DPPlot);
-imagesc(handles.DPPlotMat);
-set(handles.DPPlot,'Tag','DPPlot');
-plotPresent(handles);
-
-% Set up data cursor
-handles.dcm = datacursormode(hObject);
-set(handles.dcm,'UpdateFcn',@featureHandler,'Enable','off');
-
-% Set up threshold slider
-set(handles.ThSlide,'Value',handles.settings.modules.smr.dp.threshold,'Enable','on');
-
-% Set up selection plot
-axes(handles.SelectionPlot);
-handles.SelectedHim = imagesc(handles.SelectedMat);
-set(handles.SelectionPlot,'Tag','SelectionPlot');
-computeSelection(hObject,handles);
-   
-% Tabs Execution
-TabNames = {'SessionPlot','topoplots'};
-TabFontSize = 10;
-handles = TabsFun(handles,TabFontSize,TabNames);
+    
+    % Generate the overall DPPlot form the AllDPa matrix
+    axes(handles.DPPlot);
+    imagesc(handles.DPPlotMat,[0 3]);
+    set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
+    set(gca, 'YTickLabel', {});
+    set(gca, 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
+    set(gca, 'XTickLabel', handles.settings.acq.channel_lbl);
+    set(handles.DPPlot,'Tag','DPPlot');
+    plotPresent(handles);
+    
+    % Set up data cursor
+    handles.dcm = datacursormode(hObject);
+    set(handles.dcm,'UpdateFcn',@featureHandler,'Enable','off');
+    
+    % Set up threshold slider
+    set(handles.ThSlide,'Value',handles.settings.modules.smr.dp.threshold,'Enable','on');
+    
+    % Set up selection plot
+    axes(handles.SelectionPlot);
+    handles.SelectedHim = imagesc(handles.SelectedMat,[0 1]);
+    set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
+    set(gca, 'YTickLabel', {});
+    set(gca, 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
+    set(gca, 'XTickLabel', handles.settings.acq.channel_lbl);        
+    set(handles.SelectionPlot,'Tag','SelectionPlot');
+    computeSelection(hObject,handles);
+    
 
 % Update handles structure
 guidata(hObject, handles);
 
 % UIWAIT makes eegc3_select_gui wait for user response (see UIRESUME)
 uiwait(handles.GUIPanel);
-
-% --- TabsFun creates axes and text objects for tabs
-function handles = TabsFun(handles,TabFontSize,TabNames)
-
-% Set the colors indicating a selected/unselected tab
-handles.selectedTabColor=get(handles.SessionPlot,'BackgroundColor');
-handles.unselectedTabColor=handles.selectedTabColor-0.1;
-handles.TabNames = TabNames;
-
-% Create Tabs
-TabsNumber = length(TabNames);
-handles.TabsNumber = TabsNumber;
-TabColor = handles.selectedTabColor;
-for i = 1:TabsNumber
-    n = num2str(i);
-    
-    % Get text objects position
-    set(handles.(['tab',n,'text']),'Units','normalized')
-    pos=get(handles.(['tab',n,'text']),'Position');
-
-    % Create axes with callback function
-    handles.(['a',n]) = axes('Units','normalized',...
-                    'Box','on',...
-                    'XTick',[],...
-                    'YTick',[],...
-                    'Color',TabColor,...
-                    'Position',[pos(1) pos(2) pos(3) pos(4)+0.01],...
-                    'Tag',n,...
-                    'ButtonDownFcn',[mfilename,'(''ClickOnTab'',gcbo,[],guidata(gcbo))']);
-                    
-    % Create text with callback function
-    handles.(['t',n]) = text('String',TabNames{i},...
-                    'Units','normalized',...
-                    'Position',[pos(3),pos(2)/2+pos(4)],...
-                    'HorizontalAlignment','left',...
-                    'VerticalAlignment','middle',...
-                    'Margin',0.001,...
-                    'FontSize',TabFontSize,...
-                    'Backgroundcolor',TabColor,...
-                    'Tag',n,...
-                    'ButtonDownFcn',[mfilename,'(''ClickOnTab'',gcbo,[],guidata(gcbo))']);
-
-    TabColor = handles.unselectedTabColor;
-end
-            
-% Manage panels (place them in the correct position and manage visibilities)
-set(handles.SessionPlot,'Units','normalized')
-pan1pos=get(handles.SessionPlot,'Position');
-set(handles.tab1text,'Visible','off')
-for i = 2:TabsNumber
-    n = num2str(i);
-    set(handles.(TabNames{i}),'Units','normalized')
-    set(handles.(TabNames{i}),'Position',pan1pos)
-    set(handles.(TabNames{i}),'Visible','off')
-    set(handles.(['tab',n,'text']),'Visible','off')
-end
-
-% --- Callback function for clicking on tab
-function ClickOnTab(hObject,~,handles)
-m = str2double(get(hObject,'Tag'));
-
-for i = 1:handles.TabsNumber
-    n = num2str(i);
-    if i == m
-        set(handles.(['a',n]),'Color',handles.selectedTabColor)
-        set(handles.(['t',n]),'BackgroundColor',handles.selectedTabColor)
-        set(handles.(handles.TabNames{i}),'Visible','on')
-    else
-        set(handles.(['a',n]),'Color',handles.unselectedTabColor)
-        set(handles.(['t',n]),'BackgroundColor',handles.unselectedTabColor)
-        set(handles.([handles.TabNames{i}]),'Visible','off')
-    end
-end
 
 
 
@@ -418,7 +350,11 @@ for ch = cidx
 end
 
 axes(handles.SelectionPlot);
-handles.SelectedHim = imagesc(handles.SelectedMat);
+handles.SelectedHim = imagesc(handles.SelectedMat,[0 1]);
+set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
+set(gca, 'YTickLabel', {});
+set(gca, 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
+set(gca, 'XTickLabel', handles.settings.acq.channel_lbl);    
 set(handles.SelectionPlot,'Tag','SelectionPlot');
 plotPresent(handles);
 guidata(hObject,handles);
@@ -434,32 +370,9 @@ function GUIPanel_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 function plotPresent(handles)
-    frequencies = handles.settings.modules.smr.psd.freqs;
-    frequencies = num2cell(frequencies);
-    for freqIndex = 1:2:length(frequencies)
-        frequencies{freqIndex} = '';
-    end
-    
-    load('channel_location_16_10-20_mi.mat');
     set(gca, 'YTick',      1:handles.settings.acq.channels_eeg);
-    set(gca, 'YTickLabel', {chanlocs16.labels});
+    set(gca, 'YTickLabel', handles.settings.acq.channel_lbl);
     set(gca, 'XTick',      [1:1:length(handles.settings.modules.smr.psd.freqs)]);
-    set(gca, 'XTickLabel', frequencies);
+    set(gca, 'XTickLabel', {handles.settings.modules.smr.psd.freqs});
     xlabel('Band [Hz]');
     ylabel('Channel');
-    set(findall(gcf,'-property','FontWeight'), 'FontWeight', 'normal');
-    set(findall(gcf,'-property','FontSize'),'FontSize',10)
-    for row = 1:handles.settings.acq.channels_eeg
-        line([0, length(handles.settings.modules.smr.psd.freqs)+1], [row-0.5, row-0.5], 'Color', 'k','LineWidth',1);
-    end
-    for column = 1 : length(handles.settings.modules.smr.psd.freqs)
-        line([column-0.5, column-0.5], [0, handles.settings.acq.channels_eeg+1], 'Color', 'k', 'LineWidth',1);
-    end
-
-
-
-% --- Executes on button press in tab1text.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to tab1text (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
