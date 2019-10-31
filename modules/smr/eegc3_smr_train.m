@@ -560,7 +560,42 @@ for i = 1:length(Classifiers)
             Csettings{class_idx}.bci.smr.taskset.classes = [Classifiers{i}.task_right ...
                 Classifiers{i}.task_left Classifiers{i}.task_top Classifiers{i}.task_bottom];
 
-        end   
+        end
+
+        %% Train Gau with all data
+        Ans = questdlg(['Do you want to train a GAU classifier with all available data?'...
+                 ''], 'Attention!','Yes','No','Yes');
+        if(strcmp(Ans,'Yes'))
+
+            % Train Gau classifier with all data
+            disp(['[eegc3_smr_train] Training CNBI Gaussian classifier with all data: ' Classifiers{i}.modality]);
+            [gau, performace] = eegc3_train_gau_full(Csettings{class_idx}, cndataset.data, ...
+                cndataset.labels, cndataset.trial, hasInitClassifier);
+
+            GauFull = Csettings{class_idx};
+            GauFull.bci.smr.gau = gau;
+
+            % Add trace
+            GauFull.bci.smr.trace.Paths = cndataset.Paths;
+            GauFull.bci.smr.trace.performace = performace;
+
+            % Add modality
+            GauFull.bci.smr.taskset.modality = Classifiers{i}.modality;
+
+            % Add taskset (modality) class GDF events
+            if(Classifiers{i}.task_bottom == -1)
+                if(Classifiers{i}.task_top == -1)
+                    GauFull.bci.smr.taskset.classes = [Classifiers{i}.task_right ...
+                    Classifiers{i}.task_left];
+                else
+                    GauFull.bci.smr.taskset.classes = [Classifiers{i}.task_right ...
+                    Classifiers{i}.task_left Classifiers{i}.task_top];        
+                end
+            else
+                GauFull.bci.smr.taskset.classes = [Classifiers{i}.task_right ...
+                Classifiers{i}.task_left Classifiers{i}.task_top Classifiers{i}.task_bottom];
+            end
+        end
         
 %         if(usedlg)
 %             
@@ -622,7 +657,7 @@ for i = 1:length(Classifiers)
         Date = eegc3_daytime();
         
         if(Csettings{class_idx}.modules.smr.options.classification.gau)
-            Name = [SubjectID '_' Modality '_' Date '.smr.mat'];
+            Name = [SubjectID '_' Modality '_' Date '.smr.original.mat'];
             settings = Csettings{class_idx};
             save(Name, 'settings');
             disp(['[eegc3_smr_train] Saved eegc3 CNBI Gausiian classifier/settings ' ...
@@ -630,7 +665,7 @@ for i = 1:length(Classifiers)
             
             % EEGC2 compatibility
             analysis = eegc3_downgrade_settings(settings);
-            NameAnalysis = [SubjectID '_' Modality '_' Date '.mat'];
+            NameAnalysis = [SubjectID '_' Modality '_' Date '.original.mat'];
             save(NameAnalysis, 'analysis');
             disp(['[eegc3_smr_train] Saved eegc2 classifier ' ...
                 Classifiers{i}.modality ': ' NameAnalysis]);
@@ -665,6 +700,21 @@ for i = 1:length(Classifiers)
             disp(['[eegc3_smr_train] Saved eegc2 Sep classifier (analysis)' ...
                 Classifiers{i}.modality ': ' NameAnalysis]);
         end        
+
+        if(exist('GauFull', 'var'))
+            Name = [SubjectID '_' Modality '_' Date '.smr.mat'];
+            settings = GauFull;
+            save(Name, 'settings');
+            disp(['[eegc3_smr_train] Saved eegc3 CNBI Gaussian classifier/settings trained with all available data ' ...
+            Classifiers{i}.modality ': ' Name]);
+
+            % EEGC2 compatibility
+            analysis = eegc3_downgrade_settings(settings);
+            NameAnalysis = [SubjectID '_' Modality '_' Date '.mat'];
+            save(NameAnalysis, 'analysis');
+            disp(['[eegc3_smr_train] Saved eegc2 classifier CNBI Gaussian classifier/settings trained with all available data ' ...
+                Classifiers{i}.modality ': ' NameAnalysis]);
+        end      
             
     end
 
